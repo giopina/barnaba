@@ -174,6 +174,24 @@ def dump_gvec(filename,topology=None,cutoff=2.4):
     return dump_gvec_traj(traj,cutoff=cutoff)
 
 def dump_gvec_traj(traj,cutoff=2.4):
+    """
+    Calculate relative position of pair of nucleobases within ellipsoidal cutoff, given an MDTraj trajectory
+
+    Parameters
+    ----------
+    traj: MDTraj trajectory object
+    cutoff :  float, optional
+         Cutoff for eRMSD calculation. 
+         This cutoff value roughly correspond to considering pair of bases whose distance is within an ellipsoidal cutoff with axis x=y=2.4*5 = 12 Angstrom and z=2.4*3=7.2 Angstrom. Larger values of cutoff can be useful when analyzing unstructured/flexible molecules.
+    Returns
+    -------
+    gmat :
+        Numpy array with dimension (m,n,n,4). *m* is the number of structures in target, *n* is the number of nucleotides. As an example, the position of base 10 in the reference system of base 9 in the fourth frame is given by v = rmat[3,8,9], where v is a 4-dimensional vector
+    seq : 
+        List of residue names. Each residue is identified with the string RESNAME_RESNUMBER_CHAININDEX
+       
+
+    """
         
     top = traj.topology
     nn = nucleic.Nucleic(top)
@@ -183,6 +201,28 @@ def dump_gvec_traj(traj,cutoff=2.4):
         gvecs.append(ff.calc_gmat(coords_lcs,cutoff))
     return np.asarray(gvecs), nn.rna_seq
 
+
+def get_gvecs_pyemma(traj,cutoff=2.4):
+    """
+    Calculate relative position of pair of nucleobases within ellipsoidal cutoff, given an MDTraj trajectory.
+    Returns a (m,N) np.array, with m=# of frames, that can be used as feature for PyEmma analyses.
+
+    Parameters
+    ----------
+    traj: MDTraj trajectory object
+    cutoff :  float, optional
+         Cutoff for eRMSD calculation. 
+         This cutoff value roughly correspond to considering pair of bases whose distance is within an ellipsoidal cutoff with axis x=y=2.4*5 = 12 Angstrom and z=2.4*3=7.2 Angstrom. Larger values of cutoff can be useful when analyzing unstructured/flexible molecules.
+    Returns
+    -------
+    gvecs
+        Numpy array with dimension (m,n*n*4). *m* is the number of structures in target, *n* is the number of nucleotides.
+
+    """
+    
+    gmat,seq=dump_gvec_traj(traj)
+    gvecs=np.array(gmat.reshape(gmat.shape[0],-1),dtype='float32')
+    return gvecs
 #################################################
 
 
